@@ -1,67 +1,80 @@
-from turtle import distance
-import requests
-
-BASE_URL = 'https://beta3.api.climatiq.io'
-API_KEY = '11GM28ZZW94KVCP05ERBS4Y3SXFM'
-
-agriculture = {
-    'emission_factor_id': '3675b9a0-28bc-4dec-b34b-6198e921d781_22cdac63-419a-4980-ad99-5c0caff0a614',
-    # 'parameters': weight, weight unit
-}
-construction = {
-    'construction_factor_id': '3675b9a0-28bc-4dec-b34b-6198e921d781_22cdac63-419a-4980-ad99-5c0caff0a614'
-    # 'parameters': weight, weight unit
-}
-
-financial_service = {
-    'financial_service_id': '7241aaa8-6cc4-4a2b-8490-14487018bd2c'
-    # parameters
-}
-
-real_state = {
-    'real_state_id': '3c194ea6-e7b3-42c7-b87d-f92ca549ccc3'
-    # parameters
-}
-
-office_spends = {
-    'office_spends_id': '642c1bd6-b850-4799-aa45-31ffe2326df1'
-}
-
-passeger_car = {
-    'passeger_car_id' = '56d4bd00-3875-4186-8e8f-284dc2ab7da9'
-}
+import streamlit as st
+import json
+import pandas as pd
+from agriculture import Agriculture
+from automobiles import Automobiles
+from construction import Construction
+from eletricity import Eletricity
+from financial_service import FinancialService
+from real_state import RealState
+from emissions_estimate import EmissionsEstimate
 
 
-# INPUTS
-name = str(input('Digite seu nome: ')).capitalize()
-
-print('#' * 50)
-category = int(
-    input(' [1] - Agricultura \n [2] - Construção \n [3] - Serviços Financeiro \n [4] - Mercado Imobiliário \n '
-          + f'{name}, digite a categoria do seu empreendimento: '))
+st.header('Calculadora de Emissões de Gases do Efeito Estufa')
 
 
-kwh_per_month = float(
-    input(f'{nome}, digite o consumo de KWh do seu empreendimento:'))
-
-office_spends = str(
-    f'{nome}, Digite os custos em computadores e eletrônicos: ')
+category = st.selectbox('Selecione a categoria do seu empreendimento:', (
+    'Agricultura', 'Construção', 'Serviço Financeiro', 'Mercado Imobiliário')
+)
 
 
-distance_estimated = int(f'{nome}, digite a quantidade de Km no ano: ')
+suply_chain = st.number_input(
+    "Digite o Financiamento da Cadeia de Suprimentos em R$ do seu empreendimento: ", min_value=0.00)
 
+kwh_consumption = st.number_input(
+    'Digite o consumo de KWh desde o ínicio do seu empreendimento: ', min_value=0)
 
+colaborators = st.number_input(
+    'Digite a quantidade de colaboradores no seu empreendimento', min_value=0)
 
+office_distance = st.number_input(
+    "Digite a distancia média de Km que os colaboradores percorrem para chegar no escritório")
 
+calculate_button = st.button('Calcular')
 
+if calculate_button:
+    ghg_emission_by_category = {
+        'Agricultura': Agriculture(suply_chain).data,
+        'Construção': Construction(suply_chain).data,
+        'Serviço Financeiro': FinancialService(suply_chain).data,
+        'Mercado Imobiliário': RealState(suply_chain).data
+    }
 
-def construction():
-    requests.get(url= BASE_URL + '/batch')
+    # EMISSIONS CALCULATOR
+    energy_consumption_ghg_emission = Eletricity(kwh_consumption).data
 
+    # Job Round Trip by colaborator
+    gasoline_ghg_emission_by_colaborator = Automobiles(
+        office_distance*colaborators*2).data
 
-def financial_service():
-    pass
+    ghg_emissions_list = [ghg_emission_by_category[category],
+                          energy_consumption_ghg_emission,
+                          gasoline_ghg_emission_by_colaborator
+                          ]
 
+    emissions = EmissionsEstimate(
+        ghg_emissions_list).emissions_estimate()
 
-def real_state():
-    pass
+    emissions_list = json.loads(emissions)
+
+    emissions = {
+        "Categoria": [],
+        "Fonte de Dados": [],
+        "Unidade do CO2": [],
+        "Método do Cálculo": [],
+        "Quantidade de Emissão de CO2": []
+
+    }
+
+    for i in emissions_list['results']:
+        emissions["Categoria"].append([i['emission_factor']['category']])
+        emissions["Fonte de Dados"].append(i['emission_factor']['source'])
+        emissions['Unidade do CO2'].append(i['co2e_unit'])
+        emissions["Método do Cálculo"].append(i['co2e_calculation_method'])
+        emissions["Quantidade de Emissão de CO2"].append(i['co2e'])
+
+    emissions_df = pd.DataFrame(emissions)
+
+    st.write(emissions_df)
+
+   # print(emissions_df)
