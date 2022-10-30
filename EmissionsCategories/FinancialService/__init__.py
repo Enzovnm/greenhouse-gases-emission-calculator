@@ -1,6 +1,3 @@
-from msilib.schema import Class
-
-
 class FinancialService:
 
     def __init__(self, suply_chain_spends):

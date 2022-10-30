@@ -1,14 +1,14 @@
-import streamlit as st
 import json
+from Utils.Conversions import real_to_dolar
+import streamlit as st
 import pandas as pd
-from agriculture import Agriculture
-from automobiles import Automobiles
-from construction import Construction
-from eletricity import Eletricity
-from financial_service import FinancialService
-from real_state import RealState
-from emissions_estimate import EmissionsEstimate
-
+from EmissionsCategories import Agriculture
+from EmissionsCategories import Automobiles
+from EmissionsCategories import Construction
+from EmissionsCategories import Eletricity
+from EmissionsCategories import FinancialService
+from EmissionsCategories import RealState
+from BatchEstimate.emissions_estimate import EmissionsEstimate
 
 st.header('Calculadora de Emissões de Gases do Efeito Estufa')
 
@@ -21,30 +21,36 @@ category = st.selectbox('Selecione a categoria do seu empreendimento:', (
 suply_chain = st.number_input(
     "Digite o Financiamento da Cadeia de Suprimentos em R$ do seu empreendimento: ", min_value=0.00)
 
+suply_chain = real_to_dolar(suply_chain)
+
+
 kwh_consumption = st.number_input(
     'Digite o consumo de KWh desde o ínicio do seu empreendimento: ', min_value=0)
+
 
 colaborators = st.number_input(
     'Digite a quantidade de colaboradores no seu empreendimento', min_value=0)
 
 office_distance = st.number_input(
-    "Digite a distancia média de Km que os colaboradores percorrem para chegar no escritório")
+    "Digite a distancia média de Km que os colaboradores percorrem para chegar no escritório", min_value=0)
 
 calculate_button = st.button('Calcular')
 
 if calculate_button:
+
     ghg_emission_by_category = {
-        'Agricultura': Agriculture(suply_chain).data,
-        'Construção': Construction(suply_chain).data,
-        'Serviço Financeiro': FinancialService(suply_chain).data,
-        'Mercado Imobiliário': RealState(suply_chain).data
+        'Agricultura': Agriculture.Agriculture(suply_chain).data,
+        'Construção': Construction.Construction(suply_chain).data,
+        'Serviço Financeiro': FinancialService.FinancialService(suply_chain).data,
+        'Mercado Imobiliário': RealState.RealState(suply_chain).data
     }
 
     # EMISSIONS CALCULATOR
-    energy_consumption_ghg_emission = Eletricity(kwh_consumption).data
+    energy_consumption_ghg_emission = Eletricity.Eletricity(
+        kwh_consumption).data
 
     # Job Round Trip by colaborator
-    gasoline_ghg_emission_by_colaborator = Automobiles(
+    gasoline_ghg_emission_by_colaborator = Automobiles.Automobiles(
         office_distance*colaborators*2).data
 
     ghg_emissions_list = [ghg_emission_by_category[category],
@@ -75,6 +81,10 @@ if calculate_button:
 
     emissions_df = pd.DataFrame(emissions)
 
+    co2_emissions_total_tonne = (
+        emissions_df['Quantidade de Emissão de CO2'].sum()) / 1000
+
     st.write(emissions_df)
 
-   # print(emissions_df)
+    st.markdown('#### Emissão de CO2 Total:')
+    st.write('#### ' + str(co2_emissions_total_tonne))
