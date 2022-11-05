@@ -8,7 +8,7 @@ and retrieves with the GHG emission calculated.
 
 ## 💻Technology 
 
-* Python
+* Python 3.10
 
 ## Installing
 
@@ -17,6 +17,11 @@ To run this project it's necessary to install the following libraries:
 * Requests
 * Streamlit
 * Pandas
+
+to install:
+''' 
+pip install requirements.txt
+'''
 
 ## Running the code 
 
