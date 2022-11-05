@@ -21,7 +21,7 @@ To run this project it's necessary to install the following libraries:
 
 to install:
 ```
-pip install requirements.txt
+pip install -r requirements.txt
 ```
 
 
