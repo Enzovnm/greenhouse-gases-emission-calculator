@@ -19,12 +19,13 @@ To run this project it's necessary to install the following libraries:
 * Pandas
 
 to install:
-''' 
+```
 pip install requirements.txt
-'''
+```
+
 
 ## Running the code 
 
-``` 
+```
 streamlit run main.py
 ```
